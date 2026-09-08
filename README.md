@@ -6,7 +6,7 @@ ASW is deliberately separate from the public submission service. Public intake e
 
 ## Status
 
-M0 established architecture, trust boundaries, repository safety and CI. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered, evidence-backed clean-corpus, visible native-runtime and manual-review qualification gates.
+M0 established architecture, trust boundaries, repository safety and CI. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered, evidence-backed clean-corpus, visible native-runtime and manual-review qualification gates. M6.1 implements the local analyst queue and explicit sample state machine.
 
 ### Core goals
 
@@ -32,17 +32,13 @@ Internet -> amiguard.ploos.no quarantine
 
 There is no automatic network path from public quarantine to the analysis runtime.
 
-## Host baseline
+## Historical antivirus and native tools
 
-The physical target is an Intel N100-class mini PC: dedicated Linux host, full-disk encryption where practical, virtualization support, default-deny inbound firewall, no unrelated production secrets/data, and analysis guests separated from the normal host network.
+The local reference suite targets lawfully acquired historical antivirus tools including VirusZ III, VirusExecutor, VirusChecker II, VirusSlayer II, Mill and VT-Schutz. M3 also catalogs IRA, ADis, Disassem, Hunk, HunkFunc, SnoopDos, Scout and FileMaster 2.2 for native analysis. Exact binaries, versions, provenance and hashes stay local. Tool verdicts are evidence, not an oracle.
 
-## Historical antivirus lab
+## Operations
 
-The reference suite targets lawfully acquired copies of VirusZ III, VirusExecutor, VirusChecker II, VirusSlayer II, Mill and VT-Schutz. Their verdicts are evidence, not an oracle. Exact binaries, versions, provenance and hashes stay local. See `docs/M1_REFERENCE_ANTIVIRUS_SUITE.md`.
-
-## Native Amiga analysis toolbox
-
-M3 catalogs IRA, ADis, Disassem, Hunk, HunkFunc, SnoopDos, Scout and FileMaster 2.2 for native 680x0 disassembly, HUNK inspection, tracing, task/resident/interrupt inspection and hex/file/disk analysis. Local binaries are provenance-recorded and SHA-256 hashed, never committed here. See `docs/M3_ISOLATED_RUNTIME_LAB.md`.
+M6.1 adds `tools/asw_queue.py` with the workflow `imported -> static-analysis -> [runtime-analysis] -> candidate -> qualification -> reviewed -> closed`, plus explicit terminal rejection. Queue records contain IDs/hashes/state/history only and live outside Git.
 
 ## Milestones
 
@@ -52,7 +48,11 @@ M3 catalogs IRA, ADis, Disassem, Hunk, HunkFunc, SnoopDos, Scout and FileMaster 
 - **M3 — Isolated runtime analysis:** configuration implemented; physical N100 runtime qualification pending.
 - **M4 — Signature candidate pipeline:** implemented; export remains research-only.
 - **M5 — Qualification:** ordered evidence-backed gates implemented; actual clean-corpus/native evidence is candidate-specific.
-- **M6 — Operations:** analyst queue, retention, audit trail, backup/export policy, disaster recovery.
+- **M6.1 — Operations / analyst queue:** implemented.
+- **M6.2 — Audit trail:** next.
+- **M6.3 — Retention/cleanup:** planned.
+- **M6.4 — Backup/export/DR:** planned.
+- **M6.5 — N100 deployment runbook:** planned.
 
 ## Validation
 
