@@ -1,0 +1,29 @@
+# ASW public repository safety
+samples/
+quarantine/
+intake/
+work/
+exports/
+evidence/private/
+*.sample
+*.malware
+*.infected
+*.adf
+*.hdf
+*.img
+*.iso
+*.zip
+*.lha
+*.lzh
+*.7z
+*.rar
+
+# Local tooling
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
