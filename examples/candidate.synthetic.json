@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "synthetic-candidate-example",
+  "name": "Synthetic Candidate Example",
+  "family": "Synthetic",
+  "kind": "file",
+  "status": "candidate",
+  "sample_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "derivation": "Harmless documentation-only synthetic example",
+  "evidence": {
+    "sample_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "sources": ["synthetic-example"]
+  },
+  "signature": {
+    "type": "exact-sha256",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "gates": {
+    "clean_corpus": "pending",
+    "native_runtime": "pending",
+    "manual_review": "pending"
+  }
+}
