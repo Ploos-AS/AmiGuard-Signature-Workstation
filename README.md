@@ -6,7 +6,7 @@ ASW is deliberately separate from the public submission service. Public intake e
 
 ## Status
 
-M0 established architecture and trust boundaries. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered qualification gates. M6.1 implements the analyst queue, M6.2 the hash-chained audit trail, M6.3 safe retention cleanup, and M6.4 backup/export/disaster-recovery contracts.
+M0 established architecture and trust boundaries. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered qualification gates. M6.1 implements the analyst queue, M6.2 the hash-chained audit trail, M6.3 safe retention cleanup, M6.4 backup/export/disaster-recovery contracts, and M6.5 the physical N100 deployment and acceptance runbook.
 
 ## Trust boundary
 
@@ -27,7 +27,7 @@ The local reference suite targets lawfully acquired VirusZ III, VirusExecutor, V
 
 ## Operations
 
-M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL audit chain. M6.3 permits only explicit hash-bound cleanup of disposable workspaces. M6.4 separates normal operational metadata backups from optional malware-bearing immutable-original backups, adds SHA-256 backup manifests and requires restore verification plus an external audit-chain checkpoint.
+M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL audit chain. M6.3 permits only explicit hash-bound cleanup of disposable workspaces. M6.4 separates normal operational metadata backups from optional malware-bearing immutable-original backups, adds SHA-256 backup manifests and requires restore verification plus an external audit-chain checkpoint. M6.5 defines the dedicated N100 host, storage/network isolation, visible FS-UAE profiles, lawful ROM/Workbench and historical-tool provenance, sample transfer discipline, runtime procedure and physical acceptance checklist.
 
 ## Milestones
 
@@ -41,7 +41,7 @@ M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL a
 - **M6.2 — Audit trail:** implemented.
 - **M6.3 — Retention/cleanup:** implemented.
 - **M6.4 — Backup/export/DR:** implemented.
-- **M6.5 — N100 deployment runbook:** next.
+- **M6.5 — N100 deployment runbook:** repository-side implementation complete; physical N100 acceptance pending.
 
 ## Validation
 
@@ -51,7 +51,7 @@ make check
 
 ## Safety model
 
-Treat every imported sample as hostile. Analysis copies are disposable. Original bytes remain unchanged and cryptographically identified. No signature becomes a verified AmiGuard detection merely because ASW or a historical antivirus program names a sample. Backups containing originals are malware storage and must be handled accordingly.
+Treat every imported sample as hostile. Analysis copies are disposable. Original bytes remain unchanged and cryptographically identified. No signature becomes a verified AmiGuard detection merely because ASW or a historical antivirus program names a sample. Backups containing originals are malware storage and must be handled accordingly. Physical qualification must use visible emulator runs when runtime evidence is claimed.
 
 ## License
 
