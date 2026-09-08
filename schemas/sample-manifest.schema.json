@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ploos.no/schemas/asw/sample-manifest-v1.json",
+  "title": "ASW Sample Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "asw_sample_id",
+    "sha256",
+    "size",
+    "source_submission_id",
+    "imported_at",
+    "provenance",
+    "export_verified",
+    "import_verified",
+    "original_state",
+    "executed_on_host",
+    "analysis_status"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "asw-sample-manifest"},
+    "asw_sample_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "size": {"type": "integer", "minimum": 0},
+    "source_submission_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "imported_at": {"type": "string"},
+    "provenance": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "export_verified": {"const": true},
+    "import_verified": {"const": true},
+    "original_state": {"const": "sealed-read-only"},
+    "executed_on_host": {"const": false},
+    "analysis_status": {"enum": ["new", "analysing", "reviewed", "rejected"]}
+  }
+}

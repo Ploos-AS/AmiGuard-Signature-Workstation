@@ -4,9 +4,11 @@ AmiGuard Signature Workstation is the isolated analyst workstation for turning s
 
 ASW is deliberately separate from the public submission service. Public intake ends at quarantine. Samples cross into ASW only through an explicit, verified export/import step.
 
-## M0 status
+## Status
 
-M0 establishes the architecture, trust boundaries, repository contract, and initial qualification plan for an Intel N100-class workstation.
+M0 established the architecture, trust boundaries, repository safety contract and CI. M0 CI passed on exact HEAD `cd742241f6976d783eda86623d82350bf63f5e87`.
+
+M1 implements the first verified intake workflow: expected SHA-256 and size are checked before import, original bytes are committed under a digest-derived identity, originals are made read-only, and a machine-readable manifest records provenance without retaining the submitted filename. M1 also defines the reference-antivirus lab inventory that later isolated Amiga emulation will use for historical identification evidence.
 
 ### Core goals
 
@@ -54,6 +56,8 @@ ASW intake
    |       +--> static analysis
    |       +--> filesystem/image inspection
    |       +--> Amiga emulation when needed
+   |              |
+   |              +--> historical antivirus reference suite
    |
    +--> evidence + candidate signature
            |
@@ -67,11 +71,11 @@ ASW intake
       reviewed signature output
 ```
 
-No automatic network path from the public quarantine to the analysis runtime is required for M0.
+There is no automatic network path from the public quarantine to the analysis runtime.
 
 ## Host baseline
 
-The initial physical target is an Intel N100-class mini PC. M0 assumes:
+The initial physical target is an Intel N100-class mini PC. The design assumes:
 
 - Linux host
 - full-disk encryption where practical
@@ -82,13 +86,9 @@ The initial physical target is an Intel N100-class mini PC. M0 assumes:
 - analysis guests/containers separated from the normal host network
 - removable/export storage treated as hostile-content media
 
-The exact distribution and hypervisor/container stack are intentionally deferred to M1 qualification.
+The exact host distribution and emulator/hypervisor deployment are qualified in later milestones.
 
 ## Sample lifecycle
-
-A sample is not considered analysis-ready merely because it exists in public quarantine.
-
-The intended lifecycle is:
 
 ```text
 submitted
@@ -99,6 +99,7 @@ submitted
   -> original sealed
   -> analysis copy created
   -> analysed
+  -> historical AV evidence when useful
   -> candidate signature
   -> clean-corpus qualification
   -> visible A500/68000/Kickstart 1.2 runtime qualification
@@ -108,39 +109,43 @@ submitted
 
 Every transition that changes trust level must be explicit and recorded.
 
+## M1 intake
+
+A verified import can be exercised with a harmless fixture:
+
+```sh
+python3 tools/asw_intake.py import \
+  --root /path/to/private/asw-data \
+  --sample /path/to/exported.sample \
+  --submission-id 0123456789abcdef0123456789abcdef \
+  --expected-sha256 <sha256> \
+  --expected-size <bytes> \
+  --provenance 'AmiGuard public quarantine export'
+```
+
+The private ASW data root is intentionally outside this Git repository.
+
+## Reference antivirus lab
+
+Historical antivirus programs can provide valuable naming and family-identification evidence for old Amiga samples. ASW therefore plans an isolated emulator reference suite containing lawfully acquired copies of tools such as VirusZ III, VirusExecutor, VirusChecker II, VirusSlayer II, Mill and VT-Schutz across appropriate Kickstart/AmigaOS profiles.
+
+Their verdicts are **evidence, not an oracle**. A historical scanner result alone never creates an AmiGuard signature. Exact tool binaries, provenance, versions and hashes must be recorded locally, and the software itself is not committed to this repository. See `docs/M1_REFERENCE_ANTIVIRUS_SUITE.md`.
+
 ## Repository content policy
 
-This public repository may contain:
-
-- architecture and operations documentation
-- schemas
-- tooling source code
-- synthetic fixtures
-- hashes and non-sensitive provenance metadata
-- candidate signature metadata that does not contain redistributable malware bytes
-- qualification evidence
-
-This repository must not contain:
-
-- live malware samples
-- extracted infectious payloads
-- proprietary signature databases without redistribution rights
-- credentials or infrastructure secrets
-- unredacted private submitter data
+This public repository may contain architecture/docs, schemas, tooling source, synthetic fixtures, hashes, non-sensitive provenance metadata and qualification evidence. It must not contain live malware, infectious payloads, proprietary signature databases without redistribution rights, credentials, infrastructure secrets or private submitter data.
 
 ## Planned milestones
 
-- **M0 — Foundation:** architecture, trust boundaries, sample lifecycle, repository safety contract, initial CI.
-- **M1 — Intake:** verified import manifest and immutable-original workflow.
+- **M0 — Foundation:** architecture, trust boundaries, sample lifecycle, repository safety contract, initial CI. **Complete.**
+- **M1 — Intake:** verified import manifest, immutable-original workflow and historical antivirus reference-lab contract. **Implemented; CI/host qualification gates apply.**
 - **M2 — Static analysis:** deterministic metadata, Amiga file/HUNK/bootblock inspection helpers, evidence bundle.
-- **M3 — Isolated runtime analysis:** disposable Amiga emulation workflow with network disabled by default.
+- **M3 — Isolated runtime analysis:** disposable Amiga emulation workflow, reference antivirus images and network disabled by default.
 - **M4 — Signature candidate pipeline:** structured candidate metadata and compiler/export integration for AmiGuard.
 - **M5 — Qualification:** clean-corpus regression plus visible native AmiGuard qualification evidence.
 - **M6 — Operations:** analyst queue, retention, audit trail, backup/export policy, disaster recovery.
 
 ## Validation
-
-M0 uses lightweight repository checks only:
 
 ```sh
 make check
@@ -148,9 +153,7 @@ make check
 
 ## Safety model
 
-Treat every imported sample as hostile, even when it appears to be a harmless test file. Analysis copies are disposable. Original bytes remain unchanged and are identified by cryptographic hash.
-
-No signature becomes a verified AmiGuard detection merely because ASW generated it. Sample-backed analysis, clean-corpus qualification, and visible native runtime evidence remain separate gates.
+Treat every imported sample as hostile. Analysis copies are disposable. Original bytes remain unchanged and are identified by cryptographic hash. No signature becomes a verified AmiGuard detection merely because ASW or a historical antivirus program names a sample.
 
 ## License
 

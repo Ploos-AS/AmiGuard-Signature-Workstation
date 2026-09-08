@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "kind": "asw-reference-antivirus-catalog",
+  "policy": "metadata-only-no-binaries",
+  "tools": [
+    {
+      "name": "VirusZ III",
+      "reference_version": "1.04fs",
+      "compatibility": ["AmigaOS 2.0+", "AmigaOS 3.0+", "AmigaOS 4+", "AROS", "MorphOS"],
+      "binary_sha256": null,
+      "provenance": null,
+      "license_reviewed": false
+    },
+    {
+      "name": "VirusExecutor",
+      "reference_version": "2.34",
+      "compatibility": ["AmigaOS 2.0+", "AmigaOS 3.0+"],
+      "binary_sha256": null,
+      "provenance": null,
+      "license_reviewed": false
+    },
+    {
+      "name": "VirusChecker II",
+      "reference_version": "2.5",
+      "compatibility": ["AmigaOS 2.0+", "AmigaOS 3.0+"],
+      "binary_sha256": null,
+      "provenance": null,
+      "license_reviewed": false
+    },
+    {
+      "name": "VirusSlayer II",
+      "reference_version": "1.0b",
+      "compatibility": ["AmigaOS 2.0+", "AmigaOS 3.0+"],
+      "binary_sha256": null,
+      "provenance": null,
+      "license_reviewed": false
+    },
+    {
+      "name": "Mill",
+      "reference_version": "0.85",
+      "compatibility": ["AmigaOS 2.0+", "AmigaOS 3.0+"],
+      "binary_sha256": null,
+      "provenance": null,
+      "license_reviewed": false
+    },
+    {
+      "name": "VT-Schutz",
+      "reference_version": "3.17",
+      "compatibility": ["AmigaOS 1.2+", "AmigaOS 1.3+"],
+      "binary_sha256": null,
+      "provenance": null,
+      "license_reviewed": false
+    }
+  ]
+}
