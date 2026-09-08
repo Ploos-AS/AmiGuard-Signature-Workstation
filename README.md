@@ -6,9 +6,13 @@ ASW is deliberately separate from the public submission service. Public intake e
 
 ## Status
 
-M0 established the architecture, trust boundaries, repository safety contract and CI. M0 CI passed on exact HEAD `cd742241f6976d783eda86623d82350bf63f5e87`.
+M0 established the architecture, trust boundaries, repository safety contract and CI.
 
-M1 implements the first verified intake workflow: expected SHA-256 and size are checked before import, original bytes are committed under a digest-derived identity, originals are made read-only, and a machine-readable manifest records provenance without retaining the submitted filename. M1 also defines the reference-antivirus lab inventory that later isolated Amiga emulation will use for historical identification evidence.
+M1 implements verified intake: expected SHA-256 and size are checked before import, original bytes are committed under a digest-derived identity, originals are made read-only, and a machine-readable manifest records provenance without retaining the submitted filename. It also defines the historical antivirus reference suite.
+
+M2 implements deterministic static-analysis evidence for bootblocks, HUNK files and generic files. CI passed on exact M2 HEAD `fcdd57aa0c0cb9b214a4ea80d9b07a2bdf189e24`.
+
+M3 defines the isolated visible Amiga runtime lab: canonical A500/A500+/A1200 profiles, network disabled by default, disposable guest overlays, the historical antivirus suite and a curated native Amiga reverse-engineering/analysis toolbox. Repository configuration is CI-testable; actual runtime qualification remains a physical-ASW gate.
 
 ### Core goals
 
@@ -21,43 +25,24 @@ M1 implements the first verified intake workflow: expected SHA-256 and size are 
 - export only reviewable signature metadata/code; never publish live malware samples
 - support AmiGuard's independent AmigaOS 1.2+/68000 scanner architecture
 
-### Non-goals
-
-ASW is not:
-
-- a public upload endpoint
-- a malware distribution archive
-- a replacement for AmiGuard-Infrastructure
-- an automatic malware execution farm
-- a generic sandbox for arbitrary modern malware
-- a reason to weaken the public write-only quarantine boundary
-
 ## Trust boundary
 
 ```text
 Internet
    |
    v
-amiguard.ploos.no
-AmiGuard-Infrastructure quarantine
+amiguard.ploos.no quarantine
    |
-   | explicit admin export
-   | SHA-256 + metadata verification
+   | explicit verified export
    v
-TRANSFER MEDIA / CONTROLLED IMPORT
+ASW immutable originals
    |
-   v
-ASW intake
+   +--> deterministic static analysis
    |
-   +--> immutable originals
-   |
-   +--> disposable analysis copies
+   +--> disposable visible Amiga runtime
    |       |
-   |       +--> static analysis
-   |       +--> filesystem/image inspection
-   |       +--> Amiga emulation when needed
-   |              |
-   |              +--> historical antivirus reference suite
+   |       +--> historical antivirus suite
+   |       +--> native reverse-engineering toolbox
    |
    +--> evidence + candidate signature
            |
@@ -71,22 +56,11 @@ ASW intake
       reviewed signature output
 ```
 
-There is no automatic network path from the public quarantine to the analysis runtime.
+There is no automatic network path from public quarantine to the analysis runtime.
 
 ## Host baseline
 
-The initial physical target is an Intel N100-class mini PC. The design assumes:
-
-- Linux host
-- full-disk encryption where practical
-- dedicated ASW use
-- virtualization support enabled
-- no production secrets or unrelated personal data
-- host firewall default-deny inbound
-- analysis guests/containers separated from the normal host network
-- removable/export storage treated as hostile-content media
-
-The exact host distribution and emulator/hypervisor deployment are qualified in later milestones.
+The initial physical target is an Intel N100-class mini PC. The design assumes a dedicated Linux host, full-disk encryption where practical, virtualization support, default-deny inbound firewalling, no unrelated production secrets/data, and analysis guests separated from the normal host network.
 
 ## Sample lifecycle
 
@@ -97,9 +71,9 @@ submitted
   -> imported to ASW
   -> SHA/provenance verified
   -> original sealed
-  -> analysis copy created
-  -> analysed
-  -> historical AV evidence when useful
+  -> static evidence
+  -> disposable runtime analysis when needed
+  -> historical AV / reverse-engineering evidence
   -> candidate signature
   -> clean-corpus qualification
   -> visible A500/68000/Kickstart 1.2 runtime qualification
@@ -107,11 +81,7 @@ submitted
   -> eligible for AmiGuard signature integration
 ```
 
-Every transition that changes trust level must be explicit and recorded.
-
 ## M1 intake
-
-A verified import can be exercised with a harmless fixture:
 
 ```sh
 python3 tools/asw_intake.py import \
@@ -125,11 +95,15 @@ python3 tools/asw_intake.py import \
 
 The private ASW data root is intentionally outside this Git repository.
 
-## Reference antivirus lab
+## Historical antivirus lab
 
-Historical antivirus programs can provide valuable naming and family-identification evidence for old Amiga samples. ASW therefore plans an isolated emulator reference suite containing lawfully acquired copies of tools such as VirusZ III, VirusExecutor, VirusChecker II, VirusSlayer II, Mill and VT-Schutz across appropriate Kickstart/AmigaOS profiles.
+The initial reference suite targets lawfully acquired copies of VirusZ III, VirusExecutor, VirusChecker II, VirusSlayer II, Mill and VT-Schutz. Their verdicts are evidence, not an oracle. Exact binaries, versions, provenance and hashes are recorded locally and are not committed here. See `docs/M1_REFERENCE_ANTIVIRUS_SUITE.md`.
 
-Their verdicts are **evidence, not an oracle**. A historical scanner result alone never creates an AmiGuard signature. Exact tool binaries, provenance, versions and hashes must be recorded locally, and the software itself is not committed to this repository. See `docs/M1_REFERENCE_ANTIVIRUS_SUITE.md`.
+## Native Amiga analysis toolbox
+
+M3 also adds a curated analysis/reverse-engineering catalog. Initial Aminet references include IRA, ADis, Disassem, Hunk, HunkFunc, SnoopDos, Scout and FileMaster 2.2. This gives ASW native tools for 680x0 disassembly/reassembly, HUNK inspection, DOS/library/device tracing, task/resident/interrupt inspection and hex/file/disk analysis. FileMaster 2.2 is especially useful because it supports AmigaOS 1.2+, while several of the more advanced tools target OS 2.x+.
+
+All local tool archives/binaries must be provenance-recorded and SHA-256 hashed. Binaries are never committed to this public repository. See `docs/M3_ISOLATED_RUNTIME_LAB.md`, `config/reference-tools.json` and `config/emulator-profiles.json`.
 
 ## Repository content policy
 
@@ -137,10 +111,10 @@ This public repository may contain architecture/docs, schemas, tooling source, s
 
 ## Planned milestones
 
-- **M0 — Foundation:** architecture, trust boundaries, sample lifecycle, repository safety contract, initial CI. **Complete.**
-- **M1 — Intake:** verified import manifest, immutable-original workflow and historical antivirus reference-lab contract. **Implemented; CI/host qualification gates apply.**
-- **M2 — Static analysis:** deterministic metadata, Amiga file/HUNK/bootblock inspection helpers, evidence bundle.
-- **M3 — Isolated runtime analysis:** disposable Amiga emulation workflow, reference antivirus images and network disabled by default.
+- **M0 — Foundation:** complete.
+- **M1 — Intake:** verified import and immutable originals; implemented.
+- **M2 — Static analysis:** bootblock/HUNK/file evidence pipeline; complete with CI.
+- **M3 — Isolated runtime analysis:** emulator/profile/tooling contract implemented; physical N100 runtime qualification still required.
 - **M4 — Signature candidate pipeline:** structured candidate metadata and compiler/export integration for AmiGuard.
 - **M5 — Qualification:** clean-corpus regression plus visible native AmiGuard qualification evidence.
 - **M6 — Operations:** analyst queue, retention, audit trail, backup/export policy, disaster recovery.
