@@ -70,7 +70,7 @@ jobs:
         shell: bash
         env:
           AMISANDBOX_ANALYSIS_DIR: /tmp/asw-m6_8-analysis
-          AMISANDBOX_MACHINE_PROFILE: a500-aros-ci
+          AMISANDBOX_MACHINE_PROFILE: a500-ks13
           AMISANDBOX_CONFIG_FINGERPRINT: asw-m6.8-github-actions
           SDL_AUDIODRIVER: dummy
         run: |
@@ -134,10 +134,10 @@ jobs:
           session = json.loads((root / 'session.json').read_text())
           events = [json.loads(x) for x in (root / 'events.jsonl').read_text().splitlines() if x.strip()]
           assert session['jit_enabled'] is False
-          assert session['machine_profile'] == 'a500-aros-ci'
+          assert session['machine_profile'] == 'a500-ks13'
           assert any(e.get('type') == 'session.start' for e in events)
           assert any(e.get('type') == 'session.stop' for e in events)
-          print('PASS: real AmiSandbox AROS session produced start/stop evidence')
+          print('PASS: real AmiSandbox AROS session produced profile-bound start/stop evidence')
           PY
 
       - name: Ingest real AmiSandbox evidence through ASW adapter
