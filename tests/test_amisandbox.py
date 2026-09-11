@@ -128,6 +128,42 @@ class AmiSandboxAdapterTests(unittest.TestCase):
             )
             self.assertNotEqual(cp.returncode, 0)
 
+    def test_rejects_session_machine_profile_mismatch(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            sample = root / "sample.bin"
+            sample.write_bytes(b"synthetic")
+            analysis = root / "analysis"
+            analysis.mkdir()
+            (analysis / "session.json").write_text(
+                json.dumps({"jit_enabled": False, "machine_profile": "a500-aros-ci"}) + "\n",
+                encoding="utf-8",
+            )
+            (analysis / "events.jsonl").write_text(
+                json.dumps({"type": "session.start"}) + "\n",
+                encoding="utf-8",
+            )
+            cp = subprocess.run(
+                [
+                    sys.executable, str(TOOL),
+                    "--sample", str(sample),
+                    "--sample-id", "x",
+                    "--profile", "a500-ks13-68000",
+                    "--analysis-dir", str(analysis),
+                    "--evidence-dir", str(root / "evidence"),
+                    "--manifest", str(root / "manifest.json"),
+                    "--amisandbox-revision", "deadbeef",
+                    "--amisandbox-build", "test",
+                    "--ingest-only",
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertIn("machine profile mismatch", cp.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
