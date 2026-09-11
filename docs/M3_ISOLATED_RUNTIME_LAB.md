@@ -4,23 +4,33 @@ M3 defines the runtime-analysis environment for ASW. It is intentionally visible
 
 ## Purpose
 
-The lab has two complementary roles:
+The lab has three complementary roles:
 
-1. run historical Amiga antivirus programs against disposable copies to collect naming/family evidence;
-2. run native Amiga analysis and reverse-engineering tools to inspect code, hunks, filesystem activity, tasks, residents and memory state.
+1. execute hostile or suspicious Amiga artifacts under AmiSandbox and collect machine-readable dynamic evidence;
+2. run historical Amiga antivirus programs against disposable copies to collect naming/family evidence;
+3. run native Amiga analysis and reverse-engineering tools to inspect code, hunks, filesystem activity, tasks, residents and memory state.
 
 Historical scanner verdicts and reverse-engineering observations are evidence. Neither automatically creates a production AmiGuard signature.
 
+## Canonical runtime backend
+
+**AmiSandbox (`Ploos-AS/AmiSandbox`) is the canonical dynamic-analysis emulator for ASW.** Generic FS-UAE/Amiberry installations are not substitutes when ASW claims dynamic-analysis evidence.
+
+ASW invokes AmiSandbox in its opt-in analysis mode and records the exact AmiSandbox revision/build identity used for every evidentiary run. At minimum, each completed AmiSandbox session must preserve `session.json` and `events.jsonl`. As AmiSandbox gains additional event classes, ASW may ingest CPU/register snapshots, memory-write traces, vector/exception activity, Exec/process/library/device activity, disk and bootblock events, hashes, snapshots, screenshots and explicitly enabled network evidence.
+
+AmiSandbox remains a defense-in-depth component, not the sole security boundary. Host containment and ASW sample-handling rules still apply.
+
 ## Emulator matrix
 
-The canonical initial profiles are stored in `config/emulator-profiles.json`:
+The canonical profiles are stored in `config/emulator-profiles.json` and mapped to AmiSandbox profiles:
 
 - A500 / 68000 / Kickstart 1.2
 - A500 / 68000 / Kickstart 1.3
 - A500+ / 68000 / AmigaOS 2.04
+- A1200 / 68020 / AmigaOS 3.0
 - A1200 / 68020 / AmigaOS 3.1
 
-All profiles require visible display output. Network is disabled by default. Guest state is disposable and must be restored from a known-clean base after every hostile-sample run.
+All profiles require visible display output for qualification work. Analysis mode uses JIT disabled, network disabled by default, disposable writable state and no broad host filesystem passthrough or shared folders.
 
 ## Historical antivirus suite
 
@@ -55,12 +65,14 @@ The toolbox catalog lives in `config/reference-tools.json`. Additional tools may
 For hostile samples:
 
 - originals are never mounted writable in the guest;
-- only disposable analysis copies enter the emulator;
-- network is disabled unless a later, explicit exception is documented;
+- only disposable analysis copies enter AmiSandbox;
+- AmiSandbox analysis mode is mandatory for dynamic-evidence runs;
+- JIT is disabled for analysis-oriented builds/runs;
+- network is disabled unless an explicit exception is documented;
 - shared folders, clipboard integration and host filesystem passthrough are disabled by default;
 - base system disks are treated as immutable templates;
 - writable guest overlays are destroyed after each run;
-- screenshots/logs/verdict notes are exported as evidence, never guest malware binaries;
+- intended AmiSandbox artifacts are exported into the ASW evidence store;
 - no Amiga sample is executed directly by the Linux host.
 
 ## Evidence record
@@ -68,16 +80,39 @@ For hostile samples:
 A runtime observation should record at minimum:
 
 - ASW sample ID and SHA-256;
-- emulator/profile ID;
+- AmiSandbox Git revision/build identity;
+- ASW profile ID and AmiSandbox profile ID;
 - Kickstart/OS identity and hash where lawful to record;
-- tool name/version and exact local binary SHA-256;
+- tool name/version and exact local binary SHA-256 when a guest tool is used;
 - clean-base image identity;
 - start/end timestamp;
 - network state;
+- JIT state;
+- `session.json` reference and SHA-256;
+- `events.jsonl` reference and SHA-256;
 - operator-visible verdict/observation;
 - screenshots/log references when useful;
 - whether guest state was destroyed after the run.
 
+## ASW pipeline boundary
+
+The intended dynamic path is:
+
+```text
+AmiGuard submission/quarantine
+        -> verified ASW intake
+        -> immutable original + disposable copy
+        -> AmiSandbox analysis session
+        -> session.json + events.jsonl + artifacts
+        -> AmiForensics / analyst interpretation
+        -> signature candidate
+        -> clean-corpus + native AmiGuard qualification
+        -> manual review
+        -> research-only export
+```
+
+AmiSandbox produces evidence; it does not approve or publish signatures. ASW owns orchestration, evidence association, candidate generation/qualification and review state.
+
 ## Qualification boundary
 
-M3 repository configuration can be CI-checked without proprietary ROMs or software. Actual M3 runtime qualification requires the physical ASW N100 workstation, lawful local ROM/OS/tool installations and visible emulator runs. CI cannot substitute for that gate.
+M3 repository configuration can be CI-checked without proprietary ROMs or software. Actual runtime qualification requires the physical ASW N100 workstation, a qualified AmiSandbox build, lawful local ROM/OS/tool installations and visible emulator runs. CI cannot substitute for that gate.
