@@ -6,8 +6,10 @@ on:
     branches: [main]
     paths:
       - 'tools/asw_amisandbox.py'
+      - 'tools/asw_amiforensics.py'
       - 'config/emulator-profiles.json'
       - 'tests/test_amisandbox.py'
+      - 'tests/test_amiforensics.py'
       - '.github/workflows/amisandbox-e2e.yml'
 
 permissions:
@@ -30,11 +32,19 @@ jobs:
           path: vendor/AmiSandbox
           submodules: recursive
 
-      - name: Record AmiSandbox revision
-        id: amisandbox
+      - name: Check out AmiForensics
+        uses: actions/checkout@v4
+        with:
+          repository: Ploos-AS/AmiForensics
+          ref: main
+          path: vendor/AmiForensics
+
+      - name: Record downstream revisions
+        id: deps
         shell: bash
         run: |
-          echo "revision=$(git -C vendor/AmiSandbox rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "amisandbox_revision=$(git -C vendor/AmiSandbox rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "amiforensics_revision=$(git -C vendor/AmiForensics rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Install build and runtime dependencies
         run: |
@@ -69,20 +79,22 @@ jobs:
       - name: Run real AmiSandbox AROS session
         shell: bash
         env:
-          AMISANDBOX_ANALYSIS_DIR: /tmp/asw-m6_8-analysis
+          AMISANDBOX_ANALYSIS_DIR: /tmp/asw-m6_9-analysis
           AMISANDBOX_MACHINE_PROFILE: a500-ks13
-          AMISANDBOX_CONFIG_FINGERPRINT: asw-m6.8-github-actions
+          AMISANDBOX_CONFIG_FINGERPRINT: asw-m6.9-github-actions
           SDL_AUDIODRIVER: dummy
         run: |
           set -euo pipefail
-          rm -rf "$AMISANDBOX_ANALYSIS_DIR" /tmp/asw-m6_8-evidence /tmp/asw-m6_8-manifest.json
+          rm -rf "$AMISANDBOX_ANALYSIS_DIR" /tmp/asw-m6_9-evidence \
+            /tmp/asw-m6_9-manifest.json /tmp/asw-m6_9-amiforensics.json \
+            /tmp/asw-m6_9-amiforensics-binding.json
           mkdir -p "$AMISANDBOX_ANALYSIS_DIR"
 
           IPC_SOCKET="${XDG_RUNTIME_DIR:-/tmp}/amiberry.sock"
           rm -f "$IPC_SOCKET"
 
           xvfb-run -a ./vendor/AmiSandbox/build-asw-e2e/amiberry --model A500 -G -S 0 --log \
-            > /tmp/asw-m6_8-amiberry.log 2>&1 &
+            > /tmp/asw-m6_9-amiberry.log 2>&1 &
           AMIBERRY_PID=$!
 
           cleanup() {
@@ -98,7 +110,7 @@ jobs:
               break
             fi
             if ! kill -0 "$AMIBERRY_PID" 2>/dev/null; then
-              cat /tmp/asw-m6_8-amiberry.log
+              cat /tmp/asw-m6_9-amiberry.log
               exit 1
             fi
             sleep 0.5
@@ -130,7 +142,7 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-          root = Path('/tmp/asw-m6_8-analysis')
+          root = Path('/tmp/asw-m6_9-analysis')
           session = json.loads((root / 'session.json').read_text())
           events = [json.loads(x) for x in (root / 'events.jsonl').read_text().splitlines() if x.strip()]
           assert session['jit_enabled'] is False
@@ -143,54 +155,61 @@ jobs:
       - name: Ingest real AmiSandbox evidence through ASW adapter
         shell: bash
         env:
-          AMISANDBOX_REVISION: ${{ steps.amisandbox.outputs.revision }}
+          AMISANDBOX_REVISION: ${{ steps.deps.outputs.amisandbox_revision }}
         run: |
           set -euo pipefail
-          printf 'ASW M6.8 harmless CI sentinel\n' > /tmp/asw-m6_8-sample.bin
-          SAMPLE_SHA=$(sha256sum /tmp/asw-m6_8-sample.bin | awk '{print $1}')
+          printf 'ASW M6.9 harmless CI sentinel\n' > /tmp/asw-m6_9-sample.bin
+          SAMPLE_SHA=$(sha256sum /tmp/asw-m6_9-sample.bin | awk '{print $1}')
 
           python3 tools/asw_amisandbox.py \
-            --sample /tmp/asw-m6_8-sample.bin \
+            --sample /tmp/asw-m6_9-sample.bin \
             --sample-id ci-harmless-sentinel \
             --sample-sha256 "$SAMPLE_SHA" \
             --profile a500-ks13-68000 \
-            --analysis-dir /tmp/asw-m6_8-analysis \
-            --evidence-dir /tmp/asw-m6_8-evidence \
-            --manifest /tmp/asw-m6_8-manifest.json \
+            --analysis-dir /tmp/asw-m6_9-analysis \
+            --evidence-dir /tmp/asw-m6_9-evidence \
+            --manifest /tmp/asw-m6_9-manifest.json \
             --amisandbox-revision "$AMISANDBOX_REVISION" \
             --amisandbox-build github-actions-release-jit-off \
             --ingest-only
+
+      - name: Interpret real runtime evidence with AmiForensics
+        shell: bash
+        env:
+          AMIFORENSICS_REVISION: ${{ steps.deps.outputs.amiforensics_revision }}
+        run: |
+          set -euo pipefail
+          python3 tools/asw_amiforensics.py \
+            --runtime-manifest /tmp/asw-m6_9-manifest.json \
+            --amiforensics-report-tool vendor/AmiForensics/workstation/report.py \
+            --report /tmp/asw-m6_9-amiforensics.json \
+            --binding-manifest /tmp/asw-m6_9-amiforensics-binding.json \
+            --amiforensics-revision "$AMIFORENSICS_REVISION"
 
           python3 - <<'PY'
           import hashlib
           import json
           from pathlib import Path
-
-          manifest = json.loads(Path('/tmp/asw-m6_8-manifest.json').read_text())
-          assert manifest['kind'] == 'asw.amisandbox.runtime-evidence'
-          assert manifest['runtime']['backend'] == 'amisandbox'
-          assert manifest['runtime']['jit'] == 'disabled'
-          assert manifest['runtime']['network'] == 'disabled'
-          assert manifest['runtime']['shared_folders'] == 'disabled'
-          assert manifest['runtime']['asw_profile'] == 'a500-ks13-68000'
-          assert manifest['runtime']['amisandbox_profile'] == 'a500-ks13'
-          assert len(manifest['artifacts']) == 2
-          for item in manifest['artifacts']:
-              p = Path(item['path'])
-              digest = hashlib.sha256(p.read_bytes()).hexdigest()
-              assert digest == item['sha256']
-          print('PASS: ASW ingested and hash-bound real AmiSandbox evidence')
+          report = Path('/tmp/asw-m6_9-amiforensics.json')
+          binding = json.loads(Path('/tmp/asw-m6_9-amiforensics-binding.json').read_text())
+          assert binding['kind'] == 'asw.amiforensics.analysis'
+          assert binding['sample']['id'] == 'ci-harmless-sentinel'
+          assert binding['amiforensics']['report_schema'] == 'amiforensics.workstation.report/1'
+          assert binding['amiforensics']['report_sha256'] == hashlib.sha256(report.read_bytes()).hexdigest()
+          print('PASS: real AmiForensics report is verified and bound to ASW runtime evidence')
           PY
 
-      - name: Upload M6.8 qualification evidence
+      - name: Upload M6.9 qualification evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: asw-m6_8-amisandbox-e2e
+          name: asw-m6_9-amisandbox-amiforensics-e2e
           path: |
-            /tmp/asw-m6_8-analysis/
-            /tmp/asw-m6_8-evidence/
-            /tmp/asw-m6_8-manifest.json
-            /tmp/asw-m6_8-amiberry.log
+            /tmp/asw-m6_9-analysis/
+            /tmp/asw-m6_9-evidence/
+            /tmp/asw-m6_9-manifest.json
+            /tmp/asw-m6_9-amiforensics.json
+            /tmp/asw-m6_9-amiforensics-binding.json
+            /tmp/asw-m6_9-amiberry.log
           if-no-files-found: warn
           retention-days: 14
