@@ -126,9 +126,11 @@ def main() -> int:
 
     try:
         runtime, artifacts = validate_runtime_manifest(args.runtime_manifest)
-        tool = args.amiforensics_report_tool.resolve(strict=True)
-        if tool.is_symlink() or not tool.is_file():
+        tool_arg = args.amiforensics_report_tool
+        tool_stat = tool_arg.lstat()
+        if stat.S_ISLNK(tool_stat.st_mode) or not stat.S_ISREG(tool_stat.st_mode):
             raise ValueError("AmiForensics report tool must be a regular non-symlink file")
+        tool = tool_arg.resolve(strict=True)
 
         args.report.parent.mkdir(parents=True, exist_ok=True)
         cmd = [sys.executable, str(tool), "--manifest", str(args.runtime_manifest)]
