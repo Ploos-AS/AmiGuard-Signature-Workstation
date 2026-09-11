@@ -55,7 +55,7 @@ M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL a
 - **M6.4 — Backup/export/DR:** implemented.
 - **M6.5 — N100 deployment runbook:** repository-side implementation complete; physical N100 acceptance pending.
 - **M6.6 — AmiSandbox integration:** repository-side contract implemented; physical N100 integration qualification pending.
-- **M6.7 — AmiSandbox runner/evidence adapter:** implemented; GitHub CI qualification pending, followed by physical N100 end-to-end qualification.
+- **M6.7 — AmiSandbox runner/evidence adapter:** repository-side implementation and GitHub CI qualification complete; physical N100 end-to-end qualification pending.
 
 ## Validation
 
