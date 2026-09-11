@@ -1,0 +1,196 @@
+name: AmiSandbox Cross-Repo E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/asw_amisandbox.py'
+      - 'config/emulator-profiles.json'
+      - 'tests/test_amisandbox.py'
+      - '.github/workflows/amisandbox-e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  amisandbox-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out ASW
+        uses: actions/checkout@v4
+
+      - name: Check out AmiSandbox
+        uses: actions/checkout@v4
+        with:
+          repository: Ploos-AS/AmiSandbox
+          ref: master
+          path: vendor/AmiSandbox
+          submodules: recursive
+
+      - name: Record AmiSandbox revision
+        id: amisandbox
+        shell: bash
+        run: |
+          echo "revision=$(git -C vendor/AmiSandbox rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Install build and runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake ninja-build xvfb xauth \
+            libflac-dev libmpeg2-4-dev libpng-dev libasound2-dev \
+            libmpg123-dev libportmidi-dev libserialport-dev libenet-dev \
+            libpcap-dev libzstd-dev libcurl4-openssl-dev nlohmann-json3-dev
+
+      - name: Install SDL3 and SDL3_image
+        id: sdl
+        uses: libsdl-org/setup-sdl@main
+        with:
+          install-linux-dependencies: true
+          version: 3.2.8
+          version-sdl-image: 3.2.4
+          pre-release: false
+
+      - name: Build AmiSandbox analysis configuration
+        working-directory: vendor/AmiSandbox
+        run: |
+          cmake -S . -B build-asw-e2e -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH='${{ steps.sdl.outputs.prefix }}' \
+            -DUSE_JIT=OFF \
+            -DUSE_IPC_SOCKET=ON \
+            -DUSE_PPC=OFF \
+            -DUSE_QEMU_PPC=OFF
+          cmake --build build-asw-e2e -j"$(nproc)"
+
+      - name: Run real AmiSandbox AROS session
+        shell: bash
+        env:
+          AMISANDBOX_ANALYSIS_DIR: /tmp/asw-m6_8-analysis
+          AMISANDBOX_MACHINE_PROFILE: a500-aros-ci
+          AMISANDBOX_CONFIG_FINGERPRINT: asw-m6.8-github-actions
+          SDL_AUDIODRIVER: dummy
+        run: |
+          set -euo pipefail
+          rm -rf "$AMISANDBOX_ANALYSIS_DIR" /tmp/asw-m6_8-evidence /tmp/asw-m6_8-manifest.json
+          mkdir -p "$AMISANDBOX_ANALYSIS_DIR"
+
+          IPC_SOCKET="${XDG_RUNTIME_DIR:-/tmp}/amiberry.sock"
+          rm -f "$IPC_SOCKET"
+
+          xvfb-run -a ./vendor/AmiSandbox/build-asw-e2e/amiberry --model A500 -G -S 0 --log \
+            > /tmp/asw-m6_8-amiberry.log 2>&1 &
+          AMIBERRY_PID=$!
+
+          cleanup() {
+            if kill -0 "$AMIBERRY_PID" 2>/dev/null; then
+              kill "$AMIBERRY_PID" || true
+              wait "$AMIBERRY_PID" || true
+            fi
+          }
+          trap cleanup EXIT
+
+          for i in $(seq 1 60); do
+            if [ -S "$IPC_SOCKET" ]; then
+              break
+            fi
+            if ! kill -0 "$AMIBERRY_PID" 2>/dev/null; then
+              cat /tmp/asw-m6_8-amiberry.log
+              exit 1
+            fi
+            sleep 0.5
+          done
+
+          test -S "$IPC_SOCKET"
+          test -f "$AMISANDBOX_ANALYSIS_DIR/session.json"
+          test -f "$AMISANDBOX_ANALYSIS_DIR/events.jsonl"
+
+          python3 - "$IPC_SOCKET" <<'PY'
+          import socket
+          import sys
+          s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+          s.connect(sys.argv[1])
+          s.sendall(b'QUIT\n')
+          print(s.recv(4096).decode(errors='replace').strip())
+          s.close()
+          PY
+
+          for i in $(seq 1 40); do
+            if ! kill -0 "$AMIBERRY_PID" 2>/dev/null; then
+              break
+            fi
+            sleep 0.25
+          done
+          wait "$AMIBERRY_PID"
+          trap - EXIT
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('/tmp/asw-m6_8-analysis')
+          session = json.loads((root / 'session.json').read_text())
+          events = [json.loads(x) for x in (root / 'events.jsonl').read_text().splitlines() if x.strip()]
+          assert session['jit_enabled'] is False
+          assert session['machine_profile'] == 'a500-aros-ci'
+          assert any(e.get('type') == 'session.start' for e in events)
+          assert any(e.get('type') == 'session.stop' for e in events)
+          print('PASS: real AmiSandbox AROS session produced start/stop evidence')
+          PY
+
+      - name: Ingest real AmiSandbox evidence through ASW adapter
+        shell: bash
+        env:
+          AMISANDBOX_REVISION: ${{ steps.amisandbox.outputs.revision }}
+        run: |
+          set -euo pipefail
+          printf 'ASW M6.8 harmless CI sentinel\n' > /tmp/asw-m6_8-sample.bin
+          SAMPLE_SHA=$(sha256sum /tmp/asw-m6_8-sample.bin | awk '{print $1}')
+
+          python3 tools/asw_amisandbox.py \
+            --sample /tmp/asw-m6_8-sample.bin \
+            --sample-id ci-harmless-sentinel \
+            --sample-sha256 "$SAMPLE_SHA" \
+            --profile a500-ks13-68000 \
+            --analysis-dir /tmp/asw-m6_8-analysis \
+            --evidence-dir /tmp/asw-m6_8-evidence \
+            --manifest /tmp/asw-m6_8-manifest.json \
+            --amisandbox-revision "$AMISANDBOX_REVISION" \
+            --amisandbox-build github-actions-release-jit-off \
+            --ingest-only
+
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path('/tmp/asw-m6_8-manifest.json').read_text())
+          assert manifest['kind'] == 'asw.amisandbox.runtime-evidence'
+          assert manifest['runtime']['backend'] == 'amisandbox'
+          assert manifest['runtime']['jit'] == 'disabled'
+          assert manifest['runtime']['network'] == 'disabled'
+          assert manifest['runtime']['shared_folders'] == 'disabled'
+          assert manifest['runtime']['asw_profile'] == 'a500-ks13-68000'
+          assert manifest['runtime']['amisandbox_profile'] == 'a500-ks13'
+          assert len(manifest['artifacts']) == 2
+          for item in manifest['artifacts']:
+              p = Path(item['path'])
+              digest = hashlib.sha256(p.read_bytes()).hexdigest()
+              assert digest == item['sha256']
+          print('PASS: ASW ingested and hash-bound real AmiSandbox evidence')
+          PY
+
+      - name: Upload M6.8 qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: asw-m6_8-amisandbox-e2e
+          path: |
+            /tmp/asw-m6_8-analysis/
+            /tmp/asw-m6_8-evidence/
+            /tmp/asw-m6_8-manifest.json
+            /tmp/asw-m6_8-amiberry.log
+          if-no-files-found: warn
+          retention-days: 14
