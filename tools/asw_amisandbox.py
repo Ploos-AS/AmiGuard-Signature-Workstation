@@ -87,15 +87,24 @@ def validate_artifact(path: Path, root: Path) -> dict:
     }
 
 
-def validate_evidence(analysis_dir: Path) -> list[dict]:
+def validate_evidence(analysis_dir: Path, expected_machine_profile: str) -> list[dict]:
     if not analysis_dir.is_dir() or analysis_dir.is_symlink():
         raise ValueError("analysis directory must be a real directory")
     artifacts = []
     for name in REQUIRED_ARTIFACTS:
         artifacts.append(validate_artifact(analysis_dir / name, analysis_dir))
 
-    # Validate JSON syntax while intentionally treating the event model as opaque/versioned.
-    json.loads((analysis_dir / "session.json").read_text(encoding="utf-8"))
+    # Validate the stable session binding while treating events as opaque/versioned.
+    session = json.loads((analysis_dir / "session.json").read_text(encoding="utf-8"))
+    actual_profile = session.get("machine_profile")
+    if actual_profile != expected_machine_profile:
+        raise ValueError(
+            "AmiSandbox machine profile mismatch: "
+            f"expected {expected_machine_profile}, got {actual_profile!r}"
+        )
+    if session.get("jit_enabled") is not False:
+        raise ValueError("AmiSandbox session evidence does not prove JIT disabled")
+
     with (analysis_dir / "events.jsonl").open("r", encoding="utf-8") as f:
         for line_no, line in enumerate(f, 1):
             if line.strip():
@@ -187,7 +196,7 @@ def main() -> int:
             if completed.returncode != 0:
                 raise RuntimeError(f"AmiSandbox exited with status {completed.returncode}")
 
-        artifacts = validate_evidence(args.analysis_dir)
+        artifacts = validate_evidence(args.analysis_dir, profile["amisandbox_profile"])
         evidence_dir = args.evidence_dir / args.sample_id / f"amisandbox-{started}"
         copied = copy_evidence(args.analysis_dir, evidence_dir, artifacts)
         ended = int(time.time())
