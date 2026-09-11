@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "platforms": [
+    {
+      "id": "amiga",
+      "status": "active",
+      "runtime_backend": "amisandbox",
+      "interpreter": "amiforensics",
+      "storage_namespace": "amiga",
+      "ci_free_os_path": "aros"
+    },
+    {
+      "id": "atari-st",
+      "status": "planned",
+      "runtime_backend": "atarisandbox",
+      "interpreter": "atari-forensics",
+      "storage_namespace": "atari",
+      "ci_free_os_path": "emutos"
+    },
+    {
+      "id": "mac68k",
+      "status": "planned",
+      "runtime_backend": "macsandbox",
+      "interpreter": "mac-forensics",
+      "storage_namespace": "mac68k",
+      "ci_free_os_path": null
+    }
+  ],
+  "invariants": {
+    "cross_platform_writable_storage": "forbidden",
+    "external_guest_network_default": "disabled",
+    "shared_guest_host_folders_default": "disabled",
+    "immutable_originals": true,
+    "hash_algorithm": "sha256"
+  }
+}
