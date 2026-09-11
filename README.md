@@ -6,7 +6,7 @@ ASW is deliberately separate from the public submission service. Public intake e
 
 ## Status
 
-M0 established architecture and trust boundaries. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered qualification gates. M6.1 implements the analyst queue, M6.2 the hash-chained audit trail, M6.3 safe retention cleanup, M6.4 backup/export/disaster-recovery contracts, M6.5 the physical N100 deployment and acceptance runbook, M6.6 makes AmiSandbox the canonical dynamic-analysis backend, and M6.7 adds the executable ASW-to-AmiSandbox runner/evidence adapter.
+M0 established architecture and trust boundaries. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered qualification gates. M6.1 implements the analyst queue, M6.2 the hash-chained audit trail, M6.3 safe retention cleanup, M6.4 backup/export/disaster-recovery contracts, M6.5 the physical N100 deployment and acceptance runbook, M6.6 makes AmiSandbox the canonical dynamic-analysis backend, M6.7 adds the executable ASW-to-AmiSandbox runner/evidence adapter, M6.8 qualifies the real cross-repo AmiSandbox/AROS runtime-to-ASW evidence path in GitHub Actions, and M6.9 integrates AmiForensics as the hash-verified downstream report/interpreter stage.
 
 ## Canonical pipeline
 
@@ -17,7 +17,9 @@ Internet -> amiguard.ploos.no quarantine
   -> ASW AmiSandbox runner -> AmiSandbox
   -> session.json + events.jsonl + runtime artifacts
   -> ASW hash-bound runtime-evidence manifest
-  -> AmiForensics / analyst interpretation
+  -> ASW AmiForensics adapter -> AmiForensics deterministic report
+  -> ASW hash-bound AmiForensics analysis manifest
+  -> analyst interpretation
   -> candidate signature -> clean-corpus qualification
   -> visible native AmiGuard qualification -> manual review
   -> research-only signature export -> explicit downstream promotion
@@ -31,6 +33,8 @@ There is no automatic network path from public quarantine to the analysis runtim
 
 ASW records the exact AmiSandbox build/revision, sample SHA-256, ASW and AmiSandbox machine profiles and retained evidence hashes. Analysis runs default to JIT disabled, guest networking disabled, disposable writable state and no broad writable host filesystem exposure.
 
+`tools/asw_amiforensics.py` is the downstream interpretation boundary. It verifies all retained AmiSandbox artifact hashes before invoking AmiForensics `workstation/report.py`, then verifies the deterministic AmiForensics report back against the ASW runtime manifest and emits an atomic `asw.amiforensics.analysis` binding manifest containing the exact AmiForensics revision and report hash. This stage reads evidence only; it does not execute samples or authorize signature publication.
+
 The initial runtime matrix covers A500/Kickstart 1.2, A500/Kickstart 1.3, A500+/Kickstart 2.04, A1200/Kickstart 3.0 and A1200/Kickstart 3.1.
 
 ## Historical antivirus and native tools
@@ -39,7 +43,7 @@ The local reference suite targets lawfully acquired VirusZ III, VirusExecutor, V
 
 ## Operations
 
-M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL audit chain. M6.3 permits only explicit hash-bound cleanup of disposable workspaces. M6.4 separates normal operational metadata backups from optional malware-bearing immutable-original backups, adds SHA-256 backup manifests and requires restore verification plus an external audit-chain checkpoint. M6.5 defines the dedicated N100 host and physical acceptance contract. M6.6 defines the AmiSandbox integration/evidence contract. M6.7 implements the runner and safe evidence-ingestion boundary used by that contract.
+M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL audit chain. M6.3 permits only explicit hash-bound cleanup of disposable workspaces. M6.4 separates normal operational metadata backups from optional malware-bearing immutable-original backups, adds SHA-256 backup manifests and requires restore verification plus an external audit-chain checkpoint. M6.5 defines the dedicated N100 host and physical acceptance contract. M6.6 defines the AmiSandbox integration/evidence contract. M6.7 implements the runner and safe evidence-ingestion boundary. M6.8 qualifies the real AmiSandbox cross-repo CI path. M6.9 adds the AmiForensics downstream report boundary.
 
 ## Milestones
 
@@ -56,6 +60,8 @@ M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL a
 - **M6.5 — N100 deployment runbook:** repository-side implementation complete; physical N100 acceptance pending.
 - **M6.6 — AmiSandbox integration:** repository-side contract implemented; physical N100 integration qualification pending.
 - **M6.7 — AmiSandbox runner/evidence adapter:** repository-side implementation and GitHub CI qualification complete; physical N100 end-to-end qualification pending.
+- **M6.8 — Cross-repo AmiSandbox E2E:** GitHub Actions qualification PASS using real AmiSandbox build/AROS runtime and ASW evidence ingestion.
+- **M6.9 — AmiForensics downstream integration:** repository-side implementation complete; GitHub cross-repo qualification pending.
 
 ## Validation
 
