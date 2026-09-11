@@ -19,16 +19,17 @@ Target:
 - automatic security updates enabled
 - system clock synchronized
 
-Recommended initial host OS: Ubuntu 24.04 LTS or Debian 13. The exact distribution is less important than reproducibility, long-term support, and availability of the required visible emulator/tooling stack.
+Recommended initial host OS: Ubuntu 24.04 LTS or Debian 13. The exact distribution is less important than reproducibility, long-term support, and availability of AmiSandbox and the required analysis tooling.
 
 ## 2. Storage layout
 
-Keep the Git checkout separate from private ASW data.
+Keep Git checkouts separate from private ASW data.
 
 Suggested layout:
 
 ```text
-/opt/asw/repo/                    public Git checkout
+/opt/asw/repo/                    ASW Git checkout
+/opt/asw/amisandbox/              AmiSandbox Git checkout/build
 /var/lib/asw/
   originals/sha256/               immutable imported originals
   manifests/                      intake manifests
@@ -48,7 +49,7 @@ Private data directories should be owned by the dedicated analyst account and no
 
 The ASW host may use the network for OS/package updates and ordinary Git operations when no sample runtime is active.
 
-The Amiga analysis runtime is different:
+The AmiSandbox analysis runtime is different:
 
 - guest/emulator network is disabled by default
 - no automatic fetch from `amiguard.ploos.no`
@@ -59,20 +60,25 @@ The Amiga analysis runtime is different:
 
 If a future analysis requires network access, it must be an explicit documented exception with a dedicated evidence record.
 
-## 4. Emulator stack
+## 4. AmiSandbox runtime stack
 
-Install a visible Amiga emulator suitable for the canonical profiles in `config/emulator-profiles.json`. FS-UAE is the preferred initial runtime because visible runs are already part of the AmiGuard qualification practice.
+Install and build **AmiSandbox (`Ploos-AS/AmiSandbox`) as the canonical ASW dynamic-analysis emulator**. Generic FS-UAE/Amiberry may remain useful for comparison or unrelated compatibility work, but they do not substitute for AmiSandbox when ASW claims dynamic malware-analysis evidence.
+
+Use an analysis-oriented AmiSandbox build with JIT disabled. Record the exact Git revision/build identity used for qualification.
 
 Required profiles:
 
 1. A500 / 68000 / Kickstart 1.2 / AmigaOS 1.x
 2. A500 / 68000 / Kickstart 1.3 / AmigaOS 1.x
 3. A500+ equivalent / 68000 / Kickstart 2.04 / AmigaOS 2.04
-4. A1200 / 68020 / Kickstart 3.1 / AmigaOS 3.1
+4. A1200 / 68020 / Kickstart 3.0 / AmigaOS 3.0
+5. A1200 / 68020 / Kickstart 3.1 / AmigaOS 3.1
 
-All runtime profiles must remain visible, use disposable writable state, disable guest networking by default, and disable shared folders by default.
+All runtime profiles must remain visible for qualification work, use disposable writable state, disable guest networking by default, disable JIT for analysis, and disable broad host filesystem sharing by default.
 
-The canonical AmiGuard native qualification gate remains A500 / 68000 / Kickstart/Workbench 1.2. Headless emulator output is not sufficient for that gate.
+AmiSandbox analysis sessions must produce at least `session.json` and `events.jsonl`; these are copied into the ASW evidence store and hashed. Additional AmiSandbox artifacts are retained when relevant.
+
+The canonical AmiGuard native qualification gate remains A500 / 68000 / Kickstart/Workbench 1.2. Headless-only output is not sufficient for that gate.
 
 ## 5. ROM and Workbench provenance
 
@@ -136,21 +142,25 @@ Never analyse the immutable original directly. Create a disposable analysis copy
 
 ## 9. Runtime discipline
 
-Before each visible Amiga run:
+Before each visible AmiSandbox run:
 
 - verify sample SHA-256
-- verify selected emulator profile
+- verify AmiSandbox revision/build identity
+- verify selected ASW/AmiSandbox profile mapping
 - verify clean base disk identity
+- verify JIT disabled
 - verify network disabled
 - verify original is not mounted writable
 - start from a clean/disposable overlay
+- allocate a fresh `AMISANDBOX_ANALYSIS_DIR`
 
 During the run capture the visible result and relevant observations.
 
 After the run:
 
-- export only intended screenshots/logs/notes as evidence
-- record tool name/version/binary SHA-256 and guest profile
+- preserve and hash `session.json` and `events.jsonl`
+- export intended AmiSandbox screenshots/logs/dumps/other artifacts as evidence
+- record tool name/version/binary SHA-256 and guest profile where applicable
 - record sample SHA-256 and timestamps
 - record whether guest writable state was destroyed
 - destroy disposable guest state when no longer needed
@@ -161,11 +171,12 @@ After the run:
 For a real candidate, the ordered qualification contract remains:
 
 1. static/reverse-engineering evidence sufficient to justify the candidate
-2. clean-corpus qualification with zero known-clean matches
-3. visible native AmiGuard run on canonical A500/68000/Kickstart 1.2
-4. manual analyst review
-5. research-only export from ASW
-6. separate explicit promotion decision in the AmiGuard repository
+2. AmiSandbox dynamic evidence where applicable
+3. clean-corpus qualification with zero known-clean matches
+4. visible native AmiGuard run on canonical A500/68000/Kickstart 1.2
+5. manual analyst review
+6. research-only export from ASW
+7. separate explicit promotion decision in the AmiGuard repository
 
 ASW does not directly mark a signature as production `verified` or `infected`.
 
@@ -191,14 +202,18 @@ The physical workstation is accepted only after all of the following are manuall
 - inbound firewall default deny
 - private ASW data root permissions verified
 - repository `make check` PASS on the N100
-- canonical emulator profiles created and visible
+- AmiSandbox cloned/built from a recorded revision
+- AmiSandbox analysis-oriented build has JIT disabled
+- all five canonical AmiSandbox profiles created and visible
 - guest networking disabled by default
-- shared folders disabled by default
+- shared folders/host passthrough disabled by default
 - lawful ROM/Workbench inventory created with SHA-256
 - historical antivirus inventory created with SHA-256/provenance
 - Aminet/native analysis-tool inventory created with SHA-256/provenance
 - harmless synthetic intake fixture PASS
 - queue/audit lifecycle PASS
+- harmless AmiSandbox analysis session produces valid `session.json` and `events.jsonl`
+- AmiSandbox artifacts copied to ASW evidence and SHA-256 verified
 - backup creation + verification PASS
 - restore rehearsal PASS
 - visible A500/68000/Kickstart 1.2 harmless runtime smoke PASS
@@ -207,4 +222,4 @@ A real malware sample is not required to accept the workstation itself.
 
 ## 13. Completion boundary
 
-M6.5 repository-side completion means the deployment contract is versioned and CI-checked. Physical ASW qualification is complete only when the above acceptance evidence exists from the actual N100 workstation.
+M6.5 repository-side completion means the deployment contract is versioned and CI-checked. Physical ASW qualification is complete only when the above acceptance evidence exists from the actual N100 workstation using the canonical AmiSandbox runtime defined by M6.6.
