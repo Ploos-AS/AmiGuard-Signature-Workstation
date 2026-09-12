@@ -1,28 +1,81 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "platforms": [
     {
       "id": "amiga",
+      "family": "m68k-personal-computer",
       "status": "active",
+      "priority": 1,
       "runtime_backend": "amisandbox",
+      "emulator_base": "amiberry",
       "interpreter": "amiforensics",
       "storage_namespace": "amiga",
       "ci_free_os_path": "aros"
     },
     {
       "id": "atari-st",
+      "family": "m68k-personal-computer",
       "status": "planned",
+      "priority": 2,
       "runtime_backend": "atarisandbox",
+      "emulator_base": "hatari",
       "interpreter": "atari-forensics",
       "storage_namespace": "atari",
       "ci_free_os_path": "emutos"
     },
     {
       "id": "mac68k",
+      "family": "m68k-personal-computer",
       "status": "planned",
+      "priority": 3,
       "runtime_backend": "macsandbox",
+      "emulator_base": "basilisk-ii",
       "interpreter": "mac-forensics",
       "storage_namespace": "mac68k",
+      "ci_free_os_path": null
+    },
+    {
+      "id": "x68000",
+      "family": "m68k-personal-computer",
+      "status": "roadmap",
+      "priority": 4,
+      "runtime_backend": "x68ksandbox",
+      "emulator_base": "to-be-selected",
+      "interpreter": "x68k-forensics",
+      "storage_namespace": "x68000",
+      "ci_free_os_path": null
+    },
+    {
+      "id": "next68k",
+      "family": "m68k-workstation",
+      "status": "roadmap",
+      "priority": 5,
+      "runtime_backend": "nextsandbox",
+      "emulator_base": "to-be-selected",
+      "interpreter": "next-forensics",
+      "storage_namespace": "next68k",
+      "ci_free_os_path": null
+    },
+    {
+      "id": "sun3",
+      "family": "m68k-workstation",
+      "status": "roadmap",
+      "priority": 6,
+      "runtime_backend": "sun3sandbox",
+      "emulator_base": "to-be-selected",
+      "interpreter": "sun3-forensics",
+      "storage_namespace": "sun3",
+      "ci_free_os_path": null
+    },
+    {
+      "id": "sinclair-ql",
+      "family": "m68k-personal-computer",
+      "status": "roadmap",
+      "priority": 7,
+      "runtime_backend": "qlsandbox",
+      "emulator_base": "to-be-selected",
+      "interpreter": "ql-forensics",
+      "storage_namespace": "ql",
       "ci_free_os_path": null
     }
   ],
@@ -31,6 +84,8 @@
     "external_guest_network_default": "disabled",
     "shared_guest_host_folders_default": "disabled",
     "immutable_originals": true,
-    "hash_algorithm": "sha256"
+    "hash_algorithm": "sha256",
+    "core_must_not_assume_cpu_family": true,
+    "platform_activation_requires_backend_contract": true
   }
 }
