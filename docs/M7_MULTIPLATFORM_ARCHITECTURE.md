@@ -8,6 +8,22 @@ The existing Amiga path remains the reference implementation. M7 does not weaken
 
 ASW Core is intentionally CPU-agnostic. The first expansion family happens to be Motorola 68k systems, but no core schema or workflow may assume that every future platform is m68k.
 
+## Canonical runtime backends
+
+ASW has exactly one canonical sandbox repository for each of its first three platform families:
+
+| Platform | Canonical ASW runtime backend | Emulator lineage |
+| --- | --- | --- |
+| Amiga | `https://github.com/Ploos-AS/AmiSandbox` | Amiberry-derived |
+| Atari ST/STE/TT/Falcon | `https://github.com/Ploos-AS/AtariSandbox` | Hatari-derived |
+| Macintosh 68k | `https://github.com/Ploos-AS/MacSandbox` | Basilisk II-derived |
+
+These repositories are not optional comparison emulators. When ASW claims dynamic-analysis evidence for one of these platforms, the corresponding canonical sandbox is the runtime backend that must have produced that evidence. Generic upstream emulator builds may be used for compatibility comparison and research, but they cannot substitute for the canonical backend in an ASW-qualified dynamic-analysis record.
+
+Every ASW runtime manifest must therefore bind the platform ID, canonical backend ID, backend repository, exact backend revision/build, machine profile, guest ROM/OS identity where applicable, sample identity, security state and evidence artifact hashes.
+
+A canonical repository binding does not itself make a platform `active`. Atari and Macintosh remain `planned` until their complete backend contracts and qualification gates pass. This prevents roadmap intent from being confused with a production qualification claim.
+
 ## Architecture
 
 ASW is split conceptually into two layers:
@@ -29,7 +45,7 @@ The following controls are platform-neutral and should converge on shared schema
 - backup/export/restore verification
 - explicit approval gates
 - research-only candidate state
-- exact backend revision/build recording
+- exact backend repository/revision/build recording
 - deterministic run identifiers
 - host isolation policy
 - explicit platform and backend identity in every runtime/evidence record
@@ -119,26 +135,28 @@ Do not rewrite the working Amiga stack merely to obtain code reuse. Extract plat
 ### M7.1 — Core contract extraction
 
 - identify generic sample/evidence/run identifiers
-- define `asw.runtime-evidence/1` envelope with platform/backend fields
+- define `asw.runtime-evidence/1` envelope with platform/backend/repository fields
 - preserve Amiga compatibility adapter
 - define platform namespace and storage policy
 - add tests rejecting cross-platform artifact confusion
 
 ### M7.2 — Atari backend contract
 
-- establish Hatari-derived `AtariSandbox`
+- use the canonical Hatari-derived `Ploos-AS/AtariSandbox`
 - EmuTOS CI profile
 - ST/STE initial machine matrix
 - deterministic JSON/JSONL runtime evidence
+- CPU/register and exception/vector instrumentation
 - no host-write/network defaults
 - ASW adapter and cross-repo harmless CI qualification
 
 ### M7.3 — Macintosh 68k backend contract
 
-- establish Basilisk II-derived `MacSandbox`
+- use the canonical Basilisk II-derived `Ploos-AS/MacSandbox`
 - define lawful ROM/System Software handling and CI limits
-- Classic/Mac II initial machine matrix
+- Classic/Mac II/Quadra initial machine matrix as qualified
 - deterministic JSON/JSONL runtime evidence
+- CPU/exception, Toolbox/trap, System Folder and disk-change instrumentation
 - no host-write/network defaults
 - ASW adapter and harmless qualification path
 
@@ -188,12 +206,12 @@ Do not rewrite the working Amiga stack merely to obtain code reuse. Extract plat
 
 A roadmap platform becomes `planned` only after its emulator/base and legal asset model are documented. It becomes `active` only after all of the following pass:
 
-1. backend repository and pinned build/revision exist;
+1. canonical backend repository and pinned build/revision exist;
 2. platform-specific machine profiles are defined;
 3. networking and host-write defaults are deny-by-default;
 4. sample ingress and disposable-state destruction are specified;
 5. `session.json`/`events.jsonl` or an equivalent versioned evidence contract is implemented;
-6. ASW verifies sample, platform, backend and artifact hashes;
+6. ASW verifies sample, platform, canonical repository/backend and artifact hashes;
 7. harmless CI/runtime qualification passes where legally/technically possible;
 8. visible physical qualification passes before hostile samples are used;
 9. downstream interpretation cannot directly authorize publication/signing.
