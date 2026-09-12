@@ -34,7 +34,8 @@ def now() -> str:
 
 def write_quarantine(root: Path, platform: str, submission_id: str, payload: bytes) -> str:
     namespace = root / platform
-    namespace.mkdir(parents=True, mode=0o700)
+    namespace.mkdir(parents=True, mode=0o700, exist_ok=True)
+    os.chmod(namespace, 0o700)
     digest = hashlib.sha256(payload).hexdigest()
     (namespace / f"{submission_id}.sample").write_bytes(payload)
     os.chmod(namespace / f"{submission_id}.sample", 0o600)
