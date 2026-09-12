@@ -1,12 +1,12 @@
 # AmiGuard Signature Workstation (ASW)
 
-AmiGuard Signature Workstation is the isolated analyst workstation for turning submitted Amiga malware samples into evidence-backed signature candidates for AmiGuard and AAA. The proven Amiga implementation is now also the reference architecture for a broader multi-platform ASW Core with isolated Amiga, Atari ST and 68k Macintosh backends.
+AmiGuard Signature Workstation is the isolated analyst workstation for turning submitted Amiga malware samples into evidence-backed signature candidates for AmiGuard and AAA. The proven Amiga implementation is now also the reference architecture for a broader multi-platform ASW Core with isolated platform backends.
 
 ASW is deliberately separate from the public submission service. Public intake ends at quarantine. Samples cross into ASW only through an explicit, verified export/import step.
 
 ## Status
 
-M0 established architecture and trust boundaries. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered qualification gates. M6.1 implements the analyst queue, M6.2 the hash-chained audit trail, M6.3 safe retention cleanup, M6.4 backup/export/disaster-recovery contracts, M6.5 the physical N100 deployment and acceptance runbook, M6.6 makes AmiSandbox the canonical dynamic-analysis backend, M6.7 adds the executable ASW-to-AmiSandbox runner/evidence adapter, M6.8 qualifies the real cross-repo AmiSandbox/AROS runtime-to-ASW evidence path in GitHub Actions, and M6.9 integrates AmiForensics as the hash-verified downstream report/interpreter stage. M7 begins extraction of a platform-neutral ASW Core and defines Atari ST and 68k Macintosh analysis backends.
+M0 established architecture and trust boundaries. M1 implements verified immutable intake. M2 implements deterministic static evidence. M3 defines the isolated visible Amiga runtime lab, historical antivirus suite and native reverse-engineering toolbox; physical N100 runtime qualification remains required. M4 implements structured signature candidates and research-only AmiGuard export. M5 implements ordered qualification gates. M6.1 implements the analyst queue, M6.2 the hash-chained audit trail, M6.3 safe retention cleanup, M6.4 backup/export/disaster-recovery contracts, M6.5 the physical N100 deployment and acceptance runbook, M6.6 makes AmiSandbox the canonical dynamic-analysis backend, M6.7 adds the executable ASW-to-AmiSandbox runner/evidence adapter, M6.8 qualifies the real cross-repo AmiSandbox/AROS runtime-to-ASW evidence path in GitHub Actions, and M6.9 integrates AmiForensics as the hash-verified downstream report/interpreter stage. M7 extracts a CPU-agnostic ASW Core and defines isolated platform backends.
 
 ## Canonical Amiga pipeline
 
@@ -29,15 +29,21 @@ There is no automatic network path from public quarantine to the analysis runtim
 
 ## Multi-platform architecture
 
-M7 generalizes custody, evidence, audit, retention and workflow controls into **ASW Core**, while runtime and forensic interpretation remain platform-specific.
+M7 generalizes custody, evidence, audit, retention and workflow controls into **ASW Core**, while runtime and forensic interpretation remain platform-specific. ASW Core must not assume m68k; the first expansion wave simply focuses on classic m68k systems.
 
-Initial backend plan:
+Current platform roadmap:
 
-- **Amiga:** AmiSandbox + AmiForensics — reference implementation.
-- **Atari ST/STE:** planned **AtariSandbox**, derived from Hatari; EmuTOS is the initial free CI boot path.
-- **Macintosh 68k:** planned **MacSandbox**, derived from Basilisk II; ROM/System Software remain local lawful assets and CI scope is intentionally more limited.
+- **Amiga:** AmiSandbox + AmiForensics — active reference implementation.
+- **Atari ST/STE/TT/Falcon:** planned **AtariSandbox**, Hatari-derived; EmuTOS CI path.
+- **Macintosh 68k:** planned **MacSandbox**, Basilisk II-derived; lawful local ROM/System Software handling.
+- **Sharp X68000:** roadmap **X68kSandbox**; emulator and CI strategy to be selected.
+- **NeXT 68k:** roadmap **NeXTSandbox**; workstation/NeXTSTEP evidence model to be designed.
+- **Sun-3:** roadmap **Sun3Sandbox**; SunOS/UNIX evidence model to be designed.
+- **Sinclair QL:** roadmap **QLSandbox**; QDOS/SMSQ evidence model to be designed.
 
-One dedicated N100-class workstation may host all three initially, using separate Unix identities, storage roots, emulator builds, queues and disposable runtime images. Cross-platform writable access is deny-by-default. Separate physical machines remain a later hardening option when hostile-sample volume or trust requirements justify reducing blast radius.
+One dedicated N100-class workstation may initially host the platform workspaces using separate Unix identities, storage roots, emulator builds, queues and disposable runtime images. Cross-platform writable access is deny-by-default. Separate physical machines remain a later hardening option when hostile-sample volume or trust requirements justify reducing blast radius.
+
+A platform listed as `roadmap` is not executable or qualified. Promotion to `active` requires a backend contract, deny-by-default isolation, versioned evidence schema, verified sample/artifact binding, harmless qualification and visible physical qualification before hostile samples are introduced.
 
 See `docs/M7_MULTIPLATFORM_ARCHITECTURE.md` and `docs/M7_2_M7_3_SANDBOX_BACKENDS.md`.
 
@@ -76,10 +82,15 @@ M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL a
 - **M6.7 — AmiSandbox runner/evidence adapter:** repository-side implementation and GitHub CI qualification complete; physical N100 end-to-end qualification pending.
 - **M6.8 — Cross-repo AmiSandbox E2E:** GitHub Actions qualification PASS using real AmiSandbox build/AROS runtime and ASW evidence ingestion.
 - **M6.9 — AmiForensics downstream integration:** repository-side implementation complete; GitHub cross-repo qualification pending.
-- **M7.1 — ASW Core extraction:** architecture defined; implementation next.
+- **M7.1 — ASW Core extraction:** platform registry and isolation invariants implemented; generic evidence envelope remains next.
 - **M7.2 — Atari backend / AtariSandbox:** Hatari-derived analysis backend planned, with EmuTOS CI path.
 - **M7.3 — Macintosh 68k backend / MacSandbox:** Basilisk II-derived analysis backend planned; lawful local ROM/System Software runtime qualification required.
 - **M7.4 — Unified analyst workflow:** planned after backend contracts stabilize.
+- **M7.5 — Sharp X68000:** discovery/backend contract roadmap.
+- **M7.6 — NeXT 68k:** discovery/backend contract roadmap.
+- **M7.7 — Sun-3:** discovery/backend contract roadmap.
+- **M7.8 — Sinclair QL:** discovery/backend contract roadmap.
+- **M7.9 — Cross-platform evidence normalization:** planned after platform contracts are defined.
 
 ## Validation
 
