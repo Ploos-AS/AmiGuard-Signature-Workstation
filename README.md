@@ -45,6 +45,8 @@ One dedicated N100-class workstation may initially host the platform workspaces 
 
 A platform listed as `roadmap` is not executable or qualified. Promotion to `active` requires a backend contract, deny-by-default isolation, versioned evidence schema, verified sample/artifact binding, harmless qualification and visible physical qualification before hostile samples are introduced.
 
+ASW Core evidence uses the CPU-agnostic `asw.core.evidence/1` envelope. Platform-specific CPU, machine, ROM, OS and emulator details remain inside backend evidence rather than becoming Core fields. See `docs/M7_1_EVIDENCE_ENVELOPE.md`.
+
 See `docs/M7_MULTIPLATFORM_ARCHITECTURE.md` and `docs/M7_2_M7_3_SANDBOX_BACKENDS.md`.
 
 ## Dynamic analysis
@@ -82,7 +84,7 @@ M6.1 provides the local analyst workflow. M6.2 provides a tamper-evident JSONL a
 - **M6.7 — AmiSandbox runner/evidence adapter:** repository-side implementation and GitHub CI qualification complete; physical N100 end-to-end qualification pending.
 - **M6.8 — Cross-repo AmiSandbox E2E:** GitHub Actions qualification PASS using real AmiSandbox build/AROS runtime and ASW evidence ingestion.
 - **M6.9 — AmiForensics downstream integration:** repository-side implementation complete; GitHub cross-repo qualification pending.
-- **M7.1 — ASW Core extraction:** platform registry and isolation invariants implemented; generic evidence envelope remains next.
+- **M7.1 — ASW Core extraction:** platform registry, isolation invariants and generic CPU-agnostic evidence envelope implemented.
 - **M7.2 — Atari backend / AtariSandbox:** Hatari-derived analysis backend planned, with EmuTOS CI path.
 - **M7.3 — Macintosh 68k backend / MacSandbox:** Basilisk II-derived analysis backend planned; lawful local ROM/System Software runtime qualification required.
 - **M7.4 — Unified analyst workflow:** planned after backend contracts stabilize.
