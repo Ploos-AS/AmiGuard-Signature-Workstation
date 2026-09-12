@@ -1,0 +1,37 @@
+name: Route E2E
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  route-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out ASW
+        uses: actions/checkout@v4
+        with:
+          path: asw
+
+      - name: Check out AmiGuard Infrastructure
+        uses: actions/checkout@v4
+        with:
+          repository: Ploos-AS/AmiGuard-Infrastructure
+          path: infrastructure
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+
+      - name: Build amiguard-admin
+        working-directory: infrastructure/submit
+        run: go build -o ../../amiguard-admin ./cmd/amiguard-admin
+
+      - name: Cross-repo quarantine to ASW qualification
+        working-directory: asw
+        run: python3 tools/qualify_route_e2e.py --admin ../amiguard-admin
