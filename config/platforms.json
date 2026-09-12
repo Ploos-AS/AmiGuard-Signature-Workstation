@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "platforms": [
     {
       "id": "amiga",
@@ -7,6 +7,8 @@
       "status": "active",
       "priority": 1,
       "runtime_backend": "amisandbox",
+      "runtime_backend_repository": "https://github.com/Ploos-AS/AmiSandbox",
+      "runtime_backend_role": "canonical",
       "emulator_base": "amiberry",
       "interpreter": "amiforensics",
       "storage_namespace": "amiga",
@@ -18,6 +20,8 @@
       "status": "planned",
       "priority": 2,
       "runtime_backend": "atarisandbox",
+      "runtime_backend_repository": "https://github.com/Ploos-AS/AtariSandbox",
+      "runtime_backend_role": "canonical",
       "emulator_base": "hatari",
       "interpreter": "atari-forensics",
       "storage_namespace": "atari",
@@ -29,6 +33,8 @@
       "status": "planned",
       "priority": 3,
       "runtime_backend": "macsandbox",
+      "runtime_backend_repository": "https://github.com/Ploos-AS/MacSandbox",
+      "runtime_backend_role": "canonical",
       "emulator_base": "basilisk-ii",
       "interpreter": "mac-forensics",
       "storage_namespace": "mac68k",
@@ -40,6 +46,8 @@
       "status": "roadmap",
       "priority": 4,
       "runtime_backend": "x68ksandbox",
+      "runtime_backend_repository": null,
+      "runtime_backend_role": "reserved",
       "emulator_base": "to-be-selected",
       "interpreter": "x68k-forensics",
       "storage_namespace": "x68000",
@@ -51,6 +59,8 @@
       "status": "roadmap",
       "priority": 5,
       "runtime_backend": "nextsandbox",
+      "runtime_backend_repository": null,
+      "runtime_backend_role": "reserved",
       "emulator_base": "to-be-selected",
       "interpreter": "next-forensics",
       "storage_namespace": "next68k",
@@ -62,6 +72,8 @@
       "status": "roadmap",
       "priority": 6,
       "runtime_backend": "sun3sandbox",
+      "runtime_backend_repository": null,
+      "runtime_backend_role": "reserved",
       "emulator_base": "to-be-selected",
       "interpreter": "sun3-forensics",
       "storage_namespace": "sun3",
@@ -73,6 +85,8 @@
       "status": "roadmap",
       "priority": 7,
       "runtime_backend": "qlsandbox",
+      "runtime_backend_repository": null,
+      "runtime_backend_role": "reserved",
       "emulator_base": "to-be-selected",
       "interpreter": "ql-forensics",
       "storage_namespace": "ql",
@@ -86,6 +100,7 @@
     "immutable_originals": true,
     "hash_algorithm": "sha256",
     "core_must_not_assume_cpu_family": true,
-    "platform_activation_requires_backend_contract": true
+    "platform_activation_requires_backend_contract": true,
+    "canonical_backend_must_be_repository_pinned": true
   }
 }
