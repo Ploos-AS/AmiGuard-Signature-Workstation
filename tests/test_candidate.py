@@ -132,7 +132,7 @@ class CandidateTests(unittest.TestCase):
         }
         ext, line = MOD.export_clamav(c)
         self.assertEqual(ext, ".ndb")
-        self.assertTrue(line.endswith(":32:a1b2??d4e?f?0718"))
+        self.assertTrue(line.endswith(":32:a1b2??d4e??60718"))
 
     def test_export_clamav_rejects_unrepresentable_mask(self):
         c = base_candidate()
