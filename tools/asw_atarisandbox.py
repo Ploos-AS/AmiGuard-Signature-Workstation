@@ -44,11 +44,15 @@ def validate_manifest(doc: dict) -> None:
         raise ValueError("missing backend revision")
     if not SHA256.fullmatch(doc.get("rom_sha256", "")):
         raise ValueError("invalid ROM SHA-256")
-    if not SHA256.fullmatch(doc.get("source_manifest_sha256", "")):
-        raise ValueError("invalid source-manifest SHA-256")
+    if not isinstance(doc.get("source_evidence"), str) or not doc["source_evidence"]:
+        raise ValueError("missing source evidence manifest")
+    if not SHA256.fullmatch(doc.get("source_evidence_sha256", "")):
+        raise ValueError("invalid source-evidence SHA-256")
     objects = doc.get("objects")
     if not isinstance(objects, list) or not objects or len(objects) > 16:
         raise ValueError("invalid evidence object count")
+    if doc.get("object_count") != len(objects):
+        raise ValueError("evidence object_count mismatch")
 
 
 def ingest(source: Path, destination: Path) -> dict:
@@ -79,8 +83,8 @@ def ingest(source: Path, destination: Path) -> dict:
             raise ValueError("retained evidence hash mismatch")
         retained.append({"kind": item["kind"], "path": dst.name, "bytes": item["bytes"], "sha256": item["sha256"]})
 
-    source_manifest = safe_child(source, doc["source_manifest"])
-    if not source_manifest.is_file() or sha256(source_manifest) != doc["source_manifest_sha256"]:
+    source_evidence = safe_child(source, doc["source_evidence"])
+    if not source_evidence.is_file() or sha256(source_evidence) != doc["source_evidence_sha256"]:
         raise ValueError("source evidence manifest identity mismatch")
 
     result = {
@@ -94,7 +98,7 @@ def ingest(source: Path, destination: Path) -> dict:
         "network_enabled": False,
         "host_shared_folders_enabled": False,
         "source_asw_manifest_sha256": sha256(manifest_path),
-        "source_evidence_manifest_sha256": doc["source_manifest_sha256"],
+        "source_evidence_manifest_sha256": doc["source_evidence_sha256"],
         "objects": retained,
         "result": "PASS",
     }
